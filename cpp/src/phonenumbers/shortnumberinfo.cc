@@ -46,19 +46,17 @@ ShortNumberInfo::ShortNumberInfo()
     : phone_util_(*PhoneNumberUtil::GetInstance()),
       matcher_api_(new RegexBasedMatcher()),
       region_to_short_metadata_map_(new absl::flat_hash_map<string, PhoneMetadata>()),
-      regions_where_emergency_numbers_must_be_exact_(new absl::flat_hash_set<string>()) {
+      regions_where_emergency_numbers_must_be_exact_(new absl::flat_hash_set<RegionCode>(
+              {RegionCode::BR(), RegionCode::CL(), RegionCode::NI()})) {) {
   PhoneMetadataCollection metadata_collection;
   if (!LoadCompiledInMetadata(&metadata_collection)) {
     LOG(DFATAL) << "Could not parse compiled-in metadata.";
     return;
   }
-  for (const auto& metadata : metadata_collection.metadata()) {
+  for (auto& metadata : *(metadata_collection.mutable_metadata())) {
     const string& region_code = metadata.id();
-    region_to_short_metadata_map_->insert(std::make_pair(region_code, metadata));
+    region_to_short_metadata_map_->emplace(region_code, std::move(metadata));
   }
-  regions_where_emergency_numbers_must_be_exact_->insert("BR");
-  regions_where_emergency_numbers_must_be_exact_->insert("CL");
-  regions_where_emergency_numbers_must_be_exact_->insert("NI");
 }
 
 ShortNumberInfo::~ShortNumberInfo() {}
